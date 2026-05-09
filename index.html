@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCraft Admin Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .mono { font-family: 'Fira Code', monospace; }
+        .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); }
+        .cyber-border { border: 1px solid rgba(56, 189, 248, 0.2); }
+        .cyber-border:hover { border-color: rgba(56, 189, 248, 0.5); box-shadow: 0 0 15px rgba(56, 189, 248, 0.1); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .loader { border-top-color: #38bdf8; animation: spinner 1.5s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200 min-h-screen flex overflow-hidden">
+
+    <!-- Sidebar Navigation -->
+    <aside class="w-64 bg-slate-900/50 border-r border-slate-800 flex flex-col z-50">
+        <div class="p-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-sky-500 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(14,165,233,0.3)]">
+                    <i class="fas fa-terminal text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-xl tracking-tight text-white">CodeCraft</h1>
+                    <p class="text-[10px] mono text-sky-400 uppercase tracking-widest">Admin Terminal</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="flex-1 px-4 space-y-2 mt-4">
+            <button onclick="switchTab('dashboard')" class="nav-btn active w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-400 hover:text-white hover:bg-slate-800">
+                <i class="fas fa-th-large w-5"></i> <span>Overview</span>
+            </button>
+            <button onclick="switchTab('ideas')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-400 hover:text-white hover:bg-slate-800">
+                <i class="fas fa-lightbulb w-5"></i> <span>Idea Board</span>
+            </button>
+            <button onclick="switchTab('projects')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-400 hover:text-white hover:bg-slate-800">
+                <i class="fas fa-rocket w-5"></i> <span>Project Publisher</span>
+            </button>
+            <button onclick="switchTab('gallery')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-400 hover:text-white hover:bg-slate-800">
+                <i class="fas fa-images w-5"></i> <span>Activity Gallery</span>
+            </button>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800">
+            <div class="bg-slate-800/50 p-4 rounded-2xl flex items-center gap-3">
+                <img src="https://placehold.co/40x40/0ea5e9/ffffff?text=AD" class="w-10 h-10 rounded-full border-2 border-sky-500/50" alt="Admin">
+                <div class="overflow-hidden">
+                    <p class="text-xs font-semibold text-white truncate" id="user-display">Admin ID</p>
+                    <p class="text-[10px] text-slate-500 uppercase">System Root</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        <!-- Header -->
+        <header class="h-20 flex items-center justify-between px-8 bg-slate-950/50 backdrop-blur-md border-b border-slate-800 z-40">
+            <h2 id="tab-title" class="text-2xl font-bold text-white">Dashboard Overview</h2>
+            <div class="flex items-center gap-4">
+                <div class="relative group">
+                    <input type="text" placeholder="Quick Search (Ctrl+K)" class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 pl-10 text-sm focus:outline-none focus:border-sky-500 transition-colors w-64">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                </div>
+                <button class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-800 hover:border-sky-500 transition-colors relative">
+                    <i class="far fa-bell"></i>
+                    <span class="absolute top-2 right-2 w-2 h-2 bg-sky-500 rounded-full"></span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+            
+            <!-- Dashboard Tab -->
+            <div id="tab-dashboard" class="tab-content active">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 flex items-center justify-between">
+                        <div>
+                            <p class="text-slate-500 text-sm mb-1 uppercase tracking-wider font-semibold">Total Projects</p>
+                            <h3 id="stat-projects" class="text-3xl font-bold text-white mono">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-sky-500/10 rounded-xl flex items-center justify-center text-sky-500">
+                            <i class="fas fa-folder-open text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 flex items-center justify-between">
+                        <div>
+                            <p class="text-slate-500 text-sm mb-1 uppercase tracking-wider font-semibold">New Ideas</p>
+                            <h3 id="stat-ideas" class="text-3xl font-bold text-white mono">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500">
+                            <i class="fas fa-lightbulb text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 flex items-center justify-between">
+                        <div>
+                            <p class="text-slate-500 text-sm mb-1 uppercase tracking-wider font-semibold">Activities</p>
+                            <h3 id="stat-activities" class="text-3xl font-bold text-white mono">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-500">
+                            <i class="fas fa-calendar-check text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-slate-900/50 rounded-2xl border border-slate-800 p-6">
+                        <h4 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                            <i class="fas fa-history text-sky-500"></i> Recent Submissions
+                        </h4>
+                        <div id="recent-list" class="space-y-4">
+                            <!-- JS will populate -->
+                            <p class="text-slate-500 text-center italic py-8">Scanning for activity logs...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-900/50 rounded-2xl border border-slate-800 p-6">
+                        <h4 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                            <i class="fas fa-robot text-emerald-500"></i> AI Ideation Tool
+                        </h4>
+                        <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+                            <p class="text-sm text-slate-400 mb-4">Input a keyword and let Gemini suggest a coding project idea.</p>
+                            <div class="flex gap-2">
+                                <input id="ai-keyword" type="text" placeholder="e.g. Finance, Game, Weather" class="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm focus:outline-none">
+                                <button onclick="generateIdeaWithAI()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg transition-all flex items-center gap-2">
+                                    <i class="fas fa-magic"></i> Generate
+                                </button>
+                            </div>
+                            <div id="ai-result" class="mt-4 p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-lg hidden">
+                                <p id="ai-result-text" class="text-sm text-emerald-400 italic"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Idea Board Tab -->
+            <div id="tab-ideas" class="tab-content">
+                <div class="flex justify-between items-center mb-8">
+                    <div>
+                        <h3 class="text-xl font-bold text-white">Incoming Community Ideas</h3>
+                        <p class="text-slate-500 text-sm">Review and manage suggestions from the coding club members.</p>
+                    </div>
+                </div>
+                
+                <div id="ideas-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <!-- Cards will be injected here -->
+                </div>
+            </div>
+
+            <!-- Project Publisher Tab -->
+            <div id="tab-projects" class="tab-content">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Form Section -->
+                    <div class="lg:col-span-1">
+                        <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 sticky top-4">
+                            <h3 class="text-xl font-bold text-white mb-6">New Publication</h3>
+                            <form id="project-form" class="space-y-4">
+                                <div>
+                                    <label class="block text-xs uppercase tracking-widest text-slate-500 mb-2 font-bold">Project Name</label>
+                                    <input type="text" id="proj-name" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 focus:outline-none focus:border-sky-500 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs uppercase tracking-widest text-slate-500 mb-2 font-bold">Description</label>
+                                    <textarea id="proj-desc" rows="3" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 focus:outline-none focus:border-sky-500 text-sm"></textarea>
+                                </div>
+                                <div>
+                                    <label class="block text-xs uppercase tracking-widest text-slate-500 mb-2 font-bold">Live URL</label>
+                                    <input type="url" id="proj-url" placeholder="https://..." required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 focus:outline-none focus:border-sky-500 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs uppercase tracking-widest text-slate-500 mb-2 font-bold">Thumbnail (Image URL)</label>
+                                    <input type="url" id="proj-thumb" placeholder="https://image-link..." required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 focus:outline-none focus:border-sky-500 text-sm">
+                                </div>
+                                <button type="submit" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2">
+                                    <i class="fas fa-cloud-upload-alt"></i> Publish to Portal
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- Display Section -->
+                    <div class="lg:col-span-2">
+                        <div id="projects-feed" class="space-y-4">
+                            <!-- Cards will be injected here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Gallery Tab -->
+            <div id="tab-gallery" class="tab-content">
+                <div class="flex justify-between items-center mb-8">
+                    <div>
+                        <h3 class="text-xl font-bold text-white">Event Chronicles</h3>
+                        <p class="text-slate-500 text-sm">Upload snapshots from workshops, hackathons, and meetups.</p>
+                    </div>
+                    <button onclick="toggleUploadModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-xl transition-all flex items-center gap-2">
+                        <i class="fas fa-plus"></i> Upload Photo
+                    </button>
+                </div>
+
+                <div id="gallery-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <!-- Gallery items injected here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal for Upload Photo -->
+    <div id="upload-modal" class="fixed inset-0 z-[100] flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="toggleUploadModal()"></div>
+        <div class="bg-slate-900 border border-slate-800 p-8 rounded-3xl w-full max-w-md relative z-10">
+            <h3 class="text-xl font-bold text-white mb-6">Capture Activity</h3>
+            <form id="gallery-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs uppercase tracking-widest text-slate-500 mb-2 font-bold">Image URL</label>
+                    <input type="url" id="gal-url" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase tracking-widest text-slate-500 mb-2 font-bold">Caption</label>
+                    <input type="text" id="gal-caption" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm">
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="toggleUploadModal()" class="flex-1 px-4 py-3 border border-slate-800 rounded-xl text-slate-400 hover:bg-slate-800 transition-all">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-500 transition-all">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-8 right-8 z-[200] px-6 py-3 bg-sky-600 text-white rounded-xl shadow-2xl transition-all duration-300 translate-y-20 opacity-0 pointer-events-none">
+        <span id="toast-message">Action Successful</span>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, query, addDoc, updateDoc, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global Variables
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'codecraft-admin-3000';
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const apiKey = "AIzaSyBR3_Au3SqzIEA0Xk5fAmzvtCw3xBWjbOk"; // User provided API Key for Gemini
+
+        // Initialize
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // State
+        let currentUser = null;
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('user-display').textContent = user.uid.substring(0, 8);
+                initDataStreams();
+            } else {
+                signInAnonymously(auth);
+            }
+        });
+
+        function initDataStreams() {
+            // Ideas Stream
+            const ideasPath = `artifacts/${appId}/public/data/ideas`;
+            onSnapshot(collection(db, ideasPath), (snapshot) => {
+                const ideas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderIdeas(ideas);
+                updateStats('ideas', ideas.length);
+                renderRecent(ideas, 'Idea');
+            }, (err) => console.error("Ideas Stream Error:", err));
+
+            // Projects Stream
+            const projectsPath = `artifacts/${appId}/public/data/projects`;
+            onSnapshot(collection(db, projectsPath), (snapshot) => {
+                const projects = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderProjects(projects);
+                updateStats('projects', projects.length);
+                renderRecent(projects, 'Project');
+            }, (err) => console.error("Projects Stream Error:", err));
+
+            // Gallery Stream
+            const galleryPath = `artifacts/${appId}/public/data/gallery`;
+            onSnapshot(collection(db, galleryPath), (snapshot) => {
+                const gallery = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderGallery(gallery);
+                updateStats('activities', gallery.length);
+            }, (err) => console.error("Gallery Stream Error:", err));
+        }
+
+        // --- Rendering Logic ---
+
+        function renderIdeas(ideas) {
+            const grid = document.getElementById('ideas-grid');
+            if (ideas.length === 0) {
+                grid.innerHTML = '<div class="col-span-full py-20 text-center text-slate-600 mono">// Empty ideation buffer...</div>';
+                return;
+            }
+            grid.innerHTML = ideas.map(idea => `
+                <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl hover:border-emerald-500/50 transition-all group">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="px-2 py-1 bg-emerald-500/10 text-emerald-500 text-[10px] mono uppercase rounded border border-emerald-500/20">NEW IDEA</span>
+                        <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="deleteIdea('${idea.id}')" class="text-slate-500 hover:text-red-400"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    </div>
+                    <h4 class="text-white font-bold mb-2">${idea.title}</h4>
+                    <p class="text-slate-400 text-sm mb-4 line-clamp-3">${idea.description}</p>
+                    <div class="flex items-center gap-2 pt-4 border-t border-slate-800 mt-auto">
+                        <div class="w-6 h-6 rounded-full bg-sky-500 flex items-center justify-center text-[10px] text-white">
+                            ${idea.author ? idea.author[0] : 'U'}
+                        </div>
+                        <span class="text-xs text-slate-500">${idea.author || 'Anonymous'}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderProjects(projects) {
+            const feed = document.getElementById('projects-feed');
+            if (projects.length === 0) {
+                feed.innerHTML = '<div class="py-20 text-center text-slate-600 mono">// No projects deployed to mainnet...</div>';
+                return;
+            }
+            feed.innerHTML = projects.map(proj => `
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex gap-6 hover:bg-slate-800/30 transition-all">
+                    <div class="w-32 h-32 rounded-xl overflow-hidden flex-shrink-0 bg-slate-950 border border-slate-800">
+                        <img src="${proj.thumbnail}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/200x200/1e293b/64748b?text=Preview'">
+                    </div>
+                    <div class="flex-1 flex flex-col justify-center">
+                        <div class="flex justify-between items-start mb-1">
+                            <h4 class="text-lg font-bold text-white">${proj.name}</h4>
+                            <button onclick="deleteProject('${proj.id}')" class="text-slate-600 hover:text-red-400 transition-colors"><i class="fas fa-times"></i></button>
+                        </div>
+                        <p class="text-slate-400 text-sm mb-4 line-clamp-2">${proj.description}</p>
+                        <div class="flex items-center gap-3">
+                            <a href="${proj.url}" target="_blank" class="text-xs px-3 py-1 bg-sky-500/10 text-sky-400 rounded-full border border-sky-500/20 hover:bg-sky-500 hover:text-white transition-all">
+                                <i class="fas fa-external-link-alt mr-1"></i> Live Preview
+                            </a>
+                            <span class="text-[10px] mono text-slate-600 uppercase">Published ${new Date(proj.timestamp || Date.now()).toLocaleDateString()}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderGallery(items) {
+            const grid = document.getElementById('gallery-grid');
+            if (items.length === 0) {
+                grid.innerHTML = '<div class="col-span-full py-20 text-center text-slate-600 mono">// Zero activity logs detected...</div>';
+                return;
+            }
+            grid.innerHTML = items.map(item => `
+                <div class="aspect-square relative group rounded-xl overflow-hidden bg-slate-950 border border-slate-800">
+                    <img src="${item.url}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.src='https://placehold.co/400x400/1e293b/64748b?text=Activity'">
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
+                        <p class="text-white text-xs font-semibold mb-2">${item.caption}</p>
+                        <button onclick="deleteGalleryItem('${item.id}')" class="text-[10px] text-red-400 hover:text-red-300 flex items-center gap-1">
+                            <i class="fas fa-trash-alt"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderRecent(data, type) {
+            const list = document.getElementById('recent-list');
+            const sorted = [...data].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)).slice(0, 5);
+            if (sorted.length === 0) return;
+
+            // Clear first time
+            if (list.innerHTML.includes('Scanning')) list.innerHTML = '';
+            
+            sorted.forEach(item => {
+                const id = `recent-${item.id}`;
+                if (document.getElementById(id)) return;
+
+                const div = document.createElement('div');
+                div.id = id;
+                div.className = "flex items-center gap-4 p-3 hover:bg-slate-800/50 rounded-xl transition-all";
+                div.innerHTML = `
+                    <div class="w-10 h-10 rounded-lg flex items-center justify-center ${type === 'Idea' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-sky-500/10 text-sky-500'}">
+                        <i class="fas ${type === 'Idea' ? 'fa-lightbulb' : 'fa-code'}"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-white font-medium truncate w-40">${item.title || item.name}</p>
+                        <p class="text-[10px] text-slate-500 uppercase">${type} Received</p>
+                    </div>
+                    <div class="ml-auto">
+                        <span class="text-[10px] mono text-slate-600">${new Date(item.timestamp || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                `;
+                list.prepend(div);
+            });
+        }
+
+        // --- Actions ---
+
+        window.switchTab = (tabId) => {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active', 'text-white', 'bg-slate-800'));
+            
+            const activeTab = document.getElementById(`tab-${tabId}`);
+            activeTab.classList.add('active');
+            
+            // UI state for button
+            const activeBtn = Array.from(document.querySelectorAll('.nav-btn')).find(btn => btn.getAttribute('onclick').includes(tabId));
+            activeBtn.classList.add('active', 'text-white', 'bg-slate-800');
+            
+            document.getElementById('tab-title').textContent = activeBtn.querySelector('span').textContent;
+        };
+
+        window.toggleUploadModal = () => {
+            const modal = document.getElementById('upload-modal');
+            modal.classList.toggle('hidden');
+        };
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
+        }
+
+        function updateStats(id, count) {
+            const el = document.getElementById(`stat-${id}`);
+            if (el) el.textContent = count;
+        }
+
+        // --- Form Handlers ---
+
+        document.getElementById('project-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            btn.disabled = true;
+
+            const projectData = {
+                name: document.getElementById('proj-name').value,
+                description: document.getElementById('proj-desc').value,
+                url: document.getElementById('proj-url').value,
+                thumbnail: document.getElementById('proj-thumb').value,
+                timestamp: Date.now(),
+                publisher: currentUser.uid
+            };
+
+            try {
+                const path = `artifacts/${appId}/public/data/projects`;
+                await addDoc(collection(db, path), projectData);
+                showToast("Project successfully published!");
+                e.target.reset();
+            } catch (err) {
+                console.error(err);
+                showToast("Failed to publish project.");
+            } finally {
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            }
+        };
+
+        document.getElementById('gallery-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const galData = {
+                url: document.getElementById('gal-url').value,
+                caption: document.getElementById('gal-caption').value,
+                timestamp: Date.now()
+            };
+
+            try {
+                const path = `artifacts/${appId}/public/data/gallery`;
+                await addDoc(collection(db, path), galData);
+                showToast("Activity logged!");
+                toggleUploadModal();
+                e.target.reset();
+            } catch (err) {
+                showToast("Upload failed.");
+            }
+        };
+
+        // --- Delete Functions ---
+        window.deleteIdea = async (id) => {
+            if (!confirm("Remove this idea?")) return;
+            await deleteDoc(doc(db, `artifacts/${appId}/public/data/ideas`, id));
+            showToast("Idea cleared.");
+        };
+
+        window.deleteProject = async (id) => {
+            if (!confirm("Retract this project?")) return;
+            await deleteDoc(doc(db, `artifacts/${appId}/public/data/projects`, id));
+            showToast("Project retracted.");
+        };
+
+        window.deleteGalleryItem = async (id) => {
+            await deleteDoc(doc(db, `artifacts/${appId}/public/data/gallery`, id));
+            showToast("Photo deleted.");
+        };
+
+        // --- AI Integration ---
+        window.generateIdeaWithAI = async () => {
+            const keyword = document.getElementById('ai-keyword').value;
+            if (!keyword) return showToast("Enter a keyword first!");
+            
+            const btn = document.querySelector('[onclick="generateIdeaWithAI()"]');
+            const resBox = document.getElementById('ai-result');
+            const resText = document.getElementById('ai-result-text');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> thinking...';
+            
+            try {
+                const prompt = `Give me one cool coding project idea for a student club based on the theme: ${keyword}. Keep it to 2 sentences. Be specific and geeky.`;
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        systemInstruction: { parts: [{ text: "You are an expert software architect and club mentor." }] }
+                    })
+                });
+
+                const data = await response.json();
+                const ideaText = data.candidates[0].content.parts[0].text;
+                
+                resText.textContent = ideaText;
+                resBox.classList.remove('hidden');
+                showToast("AI computation complete.");
+
+                // Auto-inject as a new idea draft in Firebase if you want
+                const path = `artifacts/${appId}/public/data/ideas`;
+                await addDoc(collection(db, path), {
+                    title: `AI Suggestion: ${keyword}`,
+                    description: ideaText,
+                    author: "Gemini AI",
+                    timestamp: Date.now()
+                });
+
+            } catch (err) {
+                console.error(err);
+                showToast("AI connection error.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-magic"></i> Generate';
+            }
+        };
+
+        // Helper to handle external clicks or ESC
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('upload-modal');
+                if (!modal.classList.contains('hidden')) toggleUploadModal();
+            }
+        });
+
+    </script>
+</body>
+                                                       </html>
